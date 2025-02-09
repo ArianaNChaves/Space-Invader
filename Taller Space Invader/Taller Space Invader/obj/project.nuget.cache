@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "GSAVeB/NyGw=",
+  "success": true,
+  "projectFilePath": "A:\\Ariana\\Image Campus\\Taller de Videojuegos\\Space-Invader\\Taller Space Invader\\Taller Space Invader\\Taller Space Invader.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Ari\\.nuget\\packages\\raylib-cs\\7.0.1\\raylib-cs.7.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}
