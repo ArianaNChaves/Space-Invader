@@ -50,11 +50,23 @@ namespace MyApp
 
         // Enemy Settings
         //--------------------------------------------------------------------------------------
-        private static Vector2 _enemiesMaxPosition = new Vector2(210, 1110);
+        private static Vector2 _enemiesMaxPosition = new Vector2(140, 870);
         private static bool _isGoingToRight = true;
-        private static float _enemiesSpeed = 10 * FrameRateFix;
-        private static Vector2 _enemyOneInitialPosition = new Vector2(210, 350);
+        private static float _enemiesSpeed = 35 * FrameRateFix;
+        private static float _enemyMoveTimer = 0f;
+        private static float _enemyMoveInterval = 0.5f;
+            //Enemy One
+        private static Vector2 _enemyOneInitialPosition = new Vector2(80, 350);
         private static Vector2 _enemyOnePosition = _enemyOneInitialPosition;
+        private static Vector2[] _enemyOnePositionsArray = new Vector2[5];
+            //Enemy Two
+        private static Vector2 _enemyTwoInitialPosition = new Vector2(80, 250);
+        private static Vector2 _enemyTwoPosition = _enemyTwoInitialPosition;
+        private static Vector2[] _enemyTwoPositionsArray = new Vector2[5];
+            //Enemy Three
+        private static Vector2 _enemyThreeInitialPosition = new Vector2(80, 150);
+        private static Vector2 _enemyThreePosition = _enemyThreeInitialPosition;
+        private static Vector2[] _enemyThreePositionsArray = new Vector2[5];
 
         
         // Boom Settings
@@ -62,6 +74,7 @@ namespace MyApp
         
         
         private static Random _random = new Random();
+        
 
         public static void Main()
         {
@@ -69,6 +82,9 @@ namespace MyApp
             Raylib.SetTargetFPS(FPS);
             
             LoadTextures();
+            InitializeEnemyPositions(ref _enemyOnePositionsArray, _enemyOnePosition, _enemyOneTexture);
+            InitializeEnemyPositions(ref _enemyTwoPositionsArray, _enemyTwoPosition, _enemyTwoTexture);
+            InitializeEnemyPositions(ref _enemyThreePositionsArray, _enemyThreePosition, _enemyThreeTexture);
             while (!Raylib.WindowShouldClose())
             {
                 // Update
@@ -76,7 +92,9 @@ namespace MyApp
                 if (!_isGameOver)
                 {
                     //Enemy movement Handler
-                    EnemyMovement();
+                    EnemyMovement(_enemyOnePositionsArray);
+                    EnemyMovement(_enemyTwoPositionsArray);
+                    EnemyMovement( _enemyThreePositionsArray);
                     //Player movement Handler
                     PlayerMovement();
                     //Enemy Shoot?
@@ -118,7 +136,6 @@ namespace MyApp
             Raylib.ClearBackground(Color.Blue);
             
             //Hacer un enum con las diferentes escenas o pantallas y luego hacer un switch para dibujar la pantalla que queres ver
-            
             Gameplay();
             
             // UI
@@ -139,9 +156,9 @@ namespace MyApp
             Raylib.DrawTexture(_playerTexture, (int)_playerPosition.X, (int)_playerPosition.Y, Color.White);
             DrawPlayerBullet();
             
-            //Primer enemigo
-            
-            Raylib.DrawTexture(_enemyOneTexture, (int)_enemyOnePosition.X, (int)_enemyOnePosition.Y, Color.White); //Esto tiene que ser un array
+            DrawEnemyPositions(_enemyOnePositionsArray, _enemyOneTexture);
+            DrawEnemyPositions(_enemyTwoPositionsArray, _enemyTwoTexture);
+            DrawEnemyPositions(_enemyThreePositionsArray, _enemyThreeTexture);
 
 
         }
@@ -194,31 +211,65 @@ namespace MyApp
             }
         }
 
-        private static void EnemyMovement()
+        private static void EnemyMovement(Vector2[] enemyPosition)
         {
             float deltaTime = Raylib.GetFrameTime();
-            bool isEnemyOutsideLeft = _enemyOnePosition.X <= _enemiesMaxPosition.X;
-            bool isEnemyOutsideRight = _enemyOnePosition.X >= _enemiesMaxPosition.Y;
-            if (!isEnemyOutsideRight && _isGoingToRight)
-            {
-                _enemyOnePosition.X += _enemiesSpeed * deltaTime;
-            }
-            if (!isEnemyOutsideLeft && !_isGoingToRight)
-            {
-                _enemyOnePosition.X -= _enemiesSpeed * deltaTime;
-            }
+            bool isEnemyOutsideLeft = enemyPosition[0].X <= _enemiesMaxPosition.X;
+            bool isEnemyOutsideRight = enemyPosition[enemyPosition.Length - 1].X >= _enemiesMaxPosition.Y;
             
-            if (isEnemyOutsideRight)
+            _enemyMoveTimer += deltaTime;
+
+            if (_enemyMoveTimer >= _enemyMoveInterval)
             {
-                _isGoingToRight = false;
-            }
-            
-            if (isEnemyOutsideLeft)
-            {
-                _isGoingToRight = true;
+                _enemyMoveTimer = 0f;
+                
+                if (_isGoingToRight)
+                {
+                    for (int i = 0; i < enemyPosition.Length; i++)
+
+                    {
+                        enemyPosition[i].X += _enemiesSpeed * deltaTime;
+                    }
+                    if (isEnemyOutsideRight)
+                    {
+                        _isGoingToRight = false;
+                    }
+                }
+                else
+                {
+                    for (int i = enemyPosition.Length - 1; i >= 0; i--)
+
+                    {
+                        enemyPosition[i].X -= _enemiesSpeed * deltaTime;
+                    }
+                    if (isEnemyOutsideLeft)
+                    {
+                        _isGoingToRight = true;
+                    }
+                }
+                
             }
             
         }
+        
+        private static void DrawEnemyPositions(Vector2[] enemyPosition, Texture2D enemyTexture)
+        {
+            int spacing = enemyTexture.Width + 10;
+            for (int i = 0; i < enemyPosition.Length; i++)
+            {
+                Raylib.DrawTexture(enemyTexture, (int)enemyPosition[i].X + spacing, (int)enemyPosition[i].Y, Color.White);
+            }
+        }
+        
+        private static void InitializeEnemyPositions(ref Vector2[] enemyPosition, Vector2 initialEnemyPosition, Texture2D enemyTexture)
+        {
+            int spacing = enemyTexture.Width + 10;
+            for (int i = 0; i < enemyPosition.Length; i++)
+            {
+                enemyPosition[i] = new Vector2(initialEnemyPosition.X + i * spacing, initialEnemyPosition.Y);
+            }
+        }
+
         
         
         private static void Debug()
