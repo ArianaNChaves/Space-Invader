@@ -82,9 +82,9 @@ namespace MyApp
             Raylib.SetTargetFPS(FPS);
             
             LoadTextures();
-            InitializeEnemyPositions(ref _enemyOnePositionsArray, _enemyOnePosition, _enemyOneTexture);
-            InitializeEnemyPositions(ref _enemyTwoPositionsArray, _enemyTwoPosition, _enemyTwoTexture);
-            InitializeEnemyPositions(ref _enemyThreePositionsArray, _enemyThreePosition, _enemyThreeTexture);
+            InitializeEnemyPositions(_enemyOnePositionsArray, _enemyOnePosition, _enemyOneTexture);
+            InitializeEnemyPositions(_enemyTwoPositionsArray, _enemyTwoPosition, _enemyTwoTexture);
+            InitializeEnemyPositions(_enemyThreePositionsArray, _enemyThreePosition, _enemyThreeTexture);
             while (!Raylib.WindowShouldClose())
             {
                 // Update
@@ -92,9 +92,8 @@ namespace MyApp
                 if (!_isGameOver)
                 {
                     //Enemy movement Handler
-                    EnemyMovement(_enemyOnePositionsArray);
-                    EnemyMovement(_enemyTwoPositionsArray);
-                    EnemyMovement( _enemyThreePositionsArray);
+                    MoveAllEnemies();
+
                     //Player movement Handler
                     PlayerMovement();
                     //Enemy Shoot?
@@ -160,7 +159,6 @@ namespace MyApp
             DrawEnemyPositions(_enemyTwoPositionsArray, _enemyTwoTexture);
             DrawEnemyPositions(_enemyThreePositionsArray, _enemyThreeTexture);
 
-
         }
 
         private static void PlayerMovement()
@@ -217,37 +215,29 @@ namespace MyApp
             bool isEnemyOutsideLeft = enemyPosition[0].X <= _enemiesMaxPosition.X;
             bool isEnemyOutsideRight = enemyPosition[enemyPosition.Length - 1].X >= _enemiesMaxPosition.Y;
             
-            _enemyMoveTimer += deltaTime;
-
-            if (_enemyMoveTimer >= _enemyMoveInterval)
+            if (_isGoingToRight)
             {
-                _enemyMoveTimer = 0f;
-                
-                if (_isGoingToRight)
-                {
-                    for (int i = 0; i < enemyPosition.Length; i++)
+                for (int i = 0; i < enemyPosition.Length; i++)
 
-                    {
-                        enemyPosition[i].X += _enemiesSpeed * deltaTime;
-                    }
-                    if (isEnemyOutsideRight)
-                    {
-                        _isGoingToRight = false;
-                    }
-                }
-                else
                 {
-                    for (int i = enemyPosition.Length - 1; i >= 0; i--)
-
-                    {
-                        enemyPosition[i].X -= _enemiesSpeed * deltaTime;
-                    }
-                    if (isEnemyOutsideLeft)
-                    {
-                        _isGoingToRight = true;
-                    }
+                    enemyPosition[i].X += _enemiesSpeed * deltaTime;
                 }
-                
+                if (isEnemyOutsideRight)
+                {
+                    _isGoingToRight = false;
+                }
+            }
+            else
+            {
+                for (int i = enemyPosition.Length - 1; i >= 0; i--)
+
+                {
+                    enemyPosition[i].X -= _enemiesSpeed * deltaTime;
+                }
+                if (isEnemyOutsideLeft)
+                {
+                    _isGoingToRight = true;
+                }
             }
             
         }
@@ -261,7 +251,7 @@ namespace MyApp
             }
         }
         
-        private static void InitializeEnemyPositions(ref Vector2[] enemyPosition, Vector2 initialEnemyPosition, Texture2D enemyTexture)
+        private static void InitializeEnemyPositions(Vector2[] enemyPosition, Vector2 initialEnemyPosition, Texture2D enemyTexture)
         {
             int spacing = enemyTexture.Width + 10;
             for (int i = 0; i < enemyPosition.Length; i++)
@@ -270,8 +260,20 @@ namespace MyApp
             }
         }
 
-        
-        
+        private static void MoveAllEnemies()
+        {
+            float deltaTime = Raylib.GetFrameTime();
+            _enemyMoveTimer += deltaTime;
+
+            if (_enemyMoveTimer >= _enemyMoveInterval)
+            {
+                _enemyMoveTimer = 0f;
+                EnemyMovement(_enemyOnePositionsArray);
+                EnemyMovement(_enemyTwoPositionsArray);
+                EnemyMovement(_enemyThreePositionsArray);
+
+            }
+        }
         private static void Debug()
         {
            
