@@ -76,6 +76,8 @@ namespace MyApp
             public Vector2 position;
         }
 
+        private static List<Enemy> allEnemiesAlive = new List<Enemy>();
+        
         private const float MinXPosition = 40;
         //Enemy One (abajo)
         private static Vector2 _enemyOneInitialPosition = new Vector2(MinXPosition, 360);
@@ -183,13 +185,18 @@ namespace MyApp
             //Player NO TOCAR
             Raylib.DrawTexture(_playerTexture, (int)_playerPosition.X, (int)_playerPosition.Y, Color.White);
             DrawPlayerBullet();
-            DrawEnemyBullet(); // <----------------------- DRAW ENEMY BULLET
+            
 
 
             //Enemy ------------------------
             DrawEnemyPositions(_enemies1, _enemyOneTexture);
             DrawEnemyPositions(_enemies2, _enemyTwoTexture);
             DrawEnemyPositions(_enemies3, _enemyThreeTexture);
+            DrawEnemyBullet();
+
+            //Collisions ------------------------
+
+            CheckEnemyBulletCollisionWithPlayer();
 
         }
 
@@ -439,10 +446,70 @@ namespace MyApp
         //----------------------------------------------------------------------------------
         // COLLISION IMPLEMENTATION
         //----------------------------------------------------------------------------------
-
+        
         private static void CheckEnemyBulletCollisionWithPlayer()
         {
+            if (!_isEnemyBulletActive) return;
+
+            Rectangle enemyBulletCollision = new Rectangle(_enemyBulletPosition.X, _enemyBulletPosition.Y, _bulletTexture.Width, _bulletTexture.Height);
+            Rectangle playerCollision = new Rectangle(_playerPosition.X, _playerPosition.Y, _playerTexture.Width, _playerTexture.Height);
+
+            if (Raylib.CheckCollisionRecs(enemyBulletCollision, playerCollision))
+            {
+              Raylib.DrawText("Player baleado!", 20,20,50,Color.White);  
+            }
+        }
+
+        private static void AllEnemies()
+        {
+            foreach (var enemy in _enemies1)
+            {
+                allEnemiesAlive.Add(enemy);
+            }
+            foreach (var enemy in _enemies2)
+            {
+                allEnemiesAlive.Add(enemy);
+            }
+            foreach (var enemy in _enemies3)
+            {
+                allEnemiesAlive.Add(enemy);
+            }
+        }
+        
+        private static void CheckPlayerBulletCollisionWithEnemy()
+        {
+            if (!_isPlayerBulletActive) return;
+            bool isBulletHit = false;
+            int enemyHitted;
+
+            Rectangle playerBulletCollision = new Rectangle(_playerBulletPosition.X, _playerBulletPosition.Y, _bulletTexture.Width, _bulletTexture.Height);
             
+            
+            foreach (var enemy in _enemies1)
+            {
+                Rectangle enemyCollision = new Rectangle(enemy.position.X, enemy.position.Y, enemy.texture.Width, enemy.texture.Height);
+                if (Raylib.CheckCollisionRecs(playerBulletCollision, enemyCollision))
+                {
+                    Raylib.DrawText("Enemigo baleado!", 20,50,50,Color.Red);
+                    _isPlayerBulletActive = false;
+                    enemy.isAlive = false;
+                }
+            }
+
+            // for (int i = 0; i < allEnemiesAlive.Count; i++)
+            // {
+            //     Rectangle enemyCollision = new Rectangle(allEnemiesAlive[i].position.X, allEnemiesAlive[i].position.Y, allEnemiesAlive[i].texture.Width, allEnemiesAlive[i].texture.Height);
+            //     if (Raylib.CheckCollisionRecs(playerBulletCollision, enemyCollision))
+            //     {
+            //         Raylib.DrawText("Enemigo baleado!", 20,50,50,Color.Red);
+            //         _isPlayerBulletActive = false;
+            //         isBulletHit = true;
+            //         enemyHitted = i;
+            //         allEnemiesAlive[enemyHitted].isAlive = false;
+            //     }
+            // }
+            
+
         }
     }
 }
