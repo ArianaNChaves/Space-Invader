@@ -3,23 +3,25 @@ using System.IO;
 using System.Numerics;
 using Raylib_cs;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace MyApp
 {
     class Program
     {
         // Common Settings
-        //--------------------------------------------------------------------------------------
         private const int ScreenWidth = 1280;
         private const int ScreenHeight = 720;
         private const int TitleFontSize = 120;
-        private const int SubtitleFontSize = 80;
+        private const int SubtitleFontSize = 60;
         private const int CommonFontSize = 40;
         private const int FPS = 60;
         private const int FrameRateFix = 100;
+        
+        // Highscore settings
+        private static readonly string JsonPath = Path.Combine(Environment.CurrentDirectory, @"resources\high_score.json");
 
         // Textures
-        //--------------------------------------------------------------------------------------
         private static readonly string PlayerImagePath = Path.Combine(Environment.CurrentDirectory, @"resources\Player.png");
         private static readonly string EnemyOneImagePath = Path.Combine(Environment.CurrentDirectory, @"resources/EnemyOne.png");
         private static readonly string EnemyTwoImagePath = Path.Combine(Environment.CurrentDirectory, @"resources/EnemyTwo.png");
@@ -32,20 +34,17 @@ namespace MyApp
         private static Texture2D _bulletTexture;
 
         // Common Settings
-        //--------------------------------------------------------------------------------------
         private static bool _isGameplayRunning = false;
 
         // Player Settings
-        //--------------------------------------------------------------------------------------
         private static Vector2 _playerInitialPosition = new Vector2(550, 610);
         private static Vector2 _playerPosition = _playerInitialPosition;
-        private static Vector2 _playerMaxPosition = new Vector2(200, 1100);
+        private static Vector2 _playerMaxPosition = new Vector2(60, 1100);
         private static float _playerSpeed = 6 * FrameRateFix;
         private static Rectangle _playerCollisionRectangle;
         private static int _playerLives = 3;
 
         // Player Bullet Settings
-        //--------------------------------------------------------------------------------------
         private static Vector2 _playerBulletPosition;
         private static Vector2 _bulletFixedPosition = new Vector2(50, 20);
         private static float _bulletSpeed = 6 * FrameRateFix;
@@ -54,7 +53,6 @@ namespace MyApp
 
 
         // Enemy Settings
-        //--------------------------------------------------------------------------------------
         private static bool _isGameOver = false;
 
         private static Vector2 _enemiesMaxPosition = new Vector2(140, 950);
@@ -65,7 +63,6 @@ namespace MyApp
         private static int _spacing = 128;
 
         // Enemy Bullet Settings 
-        //--------------------------------------------------------------------------------------
         private static Vector2 _enemyBulletPosition;
         private static float _enemyBulletSpeed = 4 * FrameRateFix;
         private static bool _isEnemyBulletActive = false;
@@ -75,10 +72,11 @@ namespace MyApp
         private static Rectangle _enemyBulletCollisionRectangle;
 
         // Gameplay settings
-        //--------------------------------------------------------------------------------------
         private static int _score = 0;
         private static int _highScore ;
         public static Vector2 enemyDebug;
+        public static bool flag = true;
+
 
         
         private struct Enemy
@@ -105,35 +103,35 @@ namespace MyApp
         private static Vector2 _enemyThreePosition = _enemyThreeInitialPosition;
         private static Enemy[] _enemies3 = new Enemy[5];
         
-
+        // Screens settings
+        private static float _timer = 0;
         private static Random _random = new Random();
+        private static Camera2D _camera;
 
 
-        public enum GameScreenEnum
+        private enum GameScreenEnum
         {
             MainMenu,
             Gameplay,
             GameOver
         }
         
-        private static GameScreenEnum _currentScreen = GameScreenEnum.Gameplay; //todo cambiar a main menu cuando este hecho
-
+        private static GameScreenEnum _currentScreen = GameScreenEnum.MainMenu;
 
         public static void Main()
         {
             Raylib.InitWindow(ScreenWidth, ScreenHeight, "Space Invader - Final Exam");
             Raylib.SetTargetFPS(FPS);
-
+            _camera = new Camera2D();
             LoadTextures();
-            InitializeEnemy(_enemies1, _enemyOnePosition, _enemyOneTexture);
-            InitializeEnemy(_enemies2, _enemyTwoPosition, _enemyTwoTexture);
-            InitializeEnemy(_enemies3, _enemyThreePosition, _enemyThreeTexture);
+    
+            // Load highscore
+            _highScore = GetHighScoreJson().PlayerHighScore;
             
             // Main game loop
             while (!Raylib.WindowShouldClose())
             {
                 // Update
-                //----------------------------------------------------------------------------------
                 if (_currentScreen == GameScreenEnum.Gameplay)
                 {
                     //Enemies
@@ -156,14 +154,10 @@ namespace MyApp
                     CheckEnemyBulletCollisionWithPlayer();
                 }
                 
-                //----------------------------------------------------------------------------------
                 Draw();
             }
-
-            // De-Initialization
-            //--------------------------------------------------------------------------------------
+            
             Raylib.CloseWindow();
-            //--------------------------------------------------------------------------------------
 
         }
 
@@ -179,7 +173,6 @@ namespace MyApp
 
             //Bullet
             _bulletTexture = Raylib.LoadTexture(BulletImagePath);
-
         }
 
         private static void Draw()
@@ -192,10 +185,16 @@ namespace MyApp
                 case GameScreenEnum.MainMenu:
                 {
                     MainMenu();
+                    flag = true;
                 }
                     break;
                 case GameScreenEnum.Gameplay:
                 {
+                    if (flag)
+                    {
+                        InitializeGame();
+                        flag = false;
+                    }
                     Gameplay();
                     Ui();
                 }
@@ -203,6 +202,7 @@ namespace MyApp
                 case GameScreenEnum.GameOver:
                 {
                     GameOver();
+                    flag = true;
                 }
                     break;
                 default:
@@ -210,10 +210,8 @@ namespace MyApp
                     Console.WriteLine("Error: No en seleccionar una escena ~ Draw()");
                 }
                     break;
-                
             }
             
-
             Raylib.EndDrawing();
         }
 
@@ -221,16 +219,12 @@ namespace MyApp
         {
             int livesYPadding = 20;
             int scoreYPadding = 60;
-            int highscoreYPadding = 100;
             
             Raylib.DrawText("Lives: ", 30, livesYPadding, CommonFontSize, Color.White);
             Raylib.DrawText(_playerLives.ToString("F0"), 300, livesYPadding, CommonFontSize, Color.White);
             
             Raylib.DrawText("Score: ", 30, scoreYPadding, CommonFontSize, Color.White);
             Raylib.DrawText(_score.ToString("F0"), 300, scoreYPadding, CommonFontSize, Color.White);
-            
-            Raylib.DrawText("Highscore: ", 30, highscoreYPadding, CommonFontSize, Color.White);
-            Raylib.DrawText(_highScore.ToString("F0"), 300, highscoreYPadding, CommonFontSize, Color.White);
         }
 
         private static void Gameplay()
@@ -241,13 +235,11 @@ namespace MyApp
             Raylib.DrawTexture(_playerTexture, (int)_playerPosition.X, (int)_playerPosition.Y, Color.White);
             DrawPlayerBullet();
             DrawEnemyBullet();
-
-
+            
             //Enemy ------------------------
             DrawEnemyPositions(_enemies1);
             DrawEnemyPositions(_enemies2);
             DrawEnemyPositions(_enemies3);
-            
         }
 
         private static void PlayerMovement()
@@ -255,11 +247,12 @@ namespace MyApp
             float deltaTime = Raylib.GetFrameTime();
             bool isPlayerOutsideLeft = _playerPosition.X <= _playerMaxPosition.X;
             bool isPlayerOutsideRight = _playerPosition.X >= _playerMaxPosition.Y;
-            if (Raylib.IsKeyDown(KeyboardKey.D) && !isPlayerOutsideRight)
+            
+            if (Raylib.IsKeyDown(KeyboardKey.Right) && !isPlayerOutsideRight)
             {
                 _playerPosition.X += _playerSpeed * deltaTime;
             }
-            if (Raylib.IsKeyDown(KeyboardKey.A) && !isPlayerOutsideLeft)
+            if (Raylib.IsKeyDown(KeyboardKey.Left) && !isPlayerOutsideLeft)
             {
                 _playerPosition.X -= _playerSpeed * deltaTime;
             }
@@ -309,7 +302,6 @@ namespace MyApp
                     enemies[i].Position.X += _enemiesSpeed * deltaTime;
                     UpdateEnemyCollisionRectangle(ref enemies[i]);
                 }
-
             }
             else
             {
@@ -370,8 +362,7 @@ namespace MyApp
                 _enemyBulletCollisionRectangle = default;
             }
         }
-
-
+        
         private static void MoveAllEnemies()
         {
             float deltaTime = Raylib.GetFrameTime();
@@ -408,7 +399,6 @@ namespace MyApp
                 EnemyMovement(_enemies1);
                 EnemyMovement(_enemies2);
                 EnemyMovement(_enemies3);
-
             }
         }
 
@@ -416,13 +406,13 @@ namespace MyApp
         {
             Raylib.DrawRectangleLines((int)_playerCollisionRectangle.X, (int)_playerCollisionRectangle.Y, (int)_playerCollisionRectangle.Width, (int)_playerCollisionRectangle.Height, Color.Red);
             
-
             for (int i = 0; i < _enemies1.Length; i++)
             {
                 if (!(_enemies1[i].IsAlive)) continue;
                 Raylib.DrawRectangleLines((int)_enemies1[i].CollisionRectangle.X, (int)_enemies1[i].CollisionRectangle.Y, (int)_enemies1[i].CollisionRectangle.Width, (int)_enemies1[i].CollisionRectangle.Height, Color.Red);
 
             }
+            
             for (int i = 0; i < _enemies2.Length; i++)
             {
                 if (!(_enemies2[i].IsAlive)) continue;
@@ -430,6 +420,7 @@ namespace MyApp
                 Raylib.DrawRectangleLines((int)_enemies2[i].CollisionRectangle.X, (int)_enemies2[i].CollisionRectangle.Y, (int)_enemies2[i].CollisionRectangle.Width, (int)_enemies2[i].CollisionRectangle.Height, Color.Red);
 
             }
+            
             for (int i = 0; i < _enemies3.Length; i++)
             {
                 if (!(_enemies3[i].IsAlive)) continue;
@@ -439,8 +430,6 @@ namespace MyApp
             Raylib.DrawRectangleLines((int)_playerBulletCollisionRectangle.X, (int)_playerBulletCollisionRectangle.Y, (int)_playerBulletCollisionRectangle.Width, (int)_playerBulletCollisionRectangle.Height, Color.Red);
 
             Raylib.DrawRectangleLines((int)_enemyBulletCollisionRectangle.X, (int)_enemyBulletCollisionRectangle.Y, (int)_enemyBulletCollisionRectangle.Width, (int)_enemyBulletCollisionRectangle.Height, Color.Red);
-
-
         }
         
         private static void EnemyShoot()
@@ -471,11 +460,9 @@ namespace MyApp
             int randomNext = _random.Next(allAliveEnemies.Count);
             Enemy enemy = allAliveEnemies[randomNext];
             
-            
-            
-             _enemyBulletPosition = enemy.Position;
-             _enemyBulletPosition.X += enemy.Texture.Width / 2;
-             _enemyBulletPosition.Y += enemy.Texture.Height / 2; 
+            _enemyBulletPosition = enemy.Position;
+            _enemyBulletPosition.X += enemy.Texture.Width / 2;
+            _enemyBulletPosition.Y += enemy.Texture.Height / 2; 
             _isEnemyBulletActive = true;
         }
         
@@ -491,18 +478,16 @@ namespace MyApp
             }
         }
         
-
         private static void EnemyBulletHandler()
         {
-            if (_isEnemyBulletActive)
-            {
-                float deltaTime = Raylib.GetFrameTime();
-                _enemyBulletPosition.Y += _enemyBulletSpeed * deltaTime;
+            if (!_isEnemyBulletActive) return;
+            
+            float deltaTime = Raylib.GetFrameTime();
+            _enemyBulletPosition.Y += _enemyBulletSpeed * deltaTime;
 
-                if (_enemyBulletPosition.Y > ScreenHeight)
-                {
-                    _isEnemyBulletActive = false;
-                }
+            if (_enemyBulletPosition.Y > ScreenHeight)
+            {
+                _isEnemyBulletActive = false;
             }
         }
 
@@ -535,7 +520,6 @@ namespace MyApp
         {
             if (!_isPlayerBulletActive) return; 
 
-
             for (int i = 0; i < enemies.Length; i++) 
             {
                 if (enemies[i].IsAlive) 
@@ -566,9 +550,8 @@ namespace MyApp
                 _isGameOver = true;
                 _currentScreen = GameScreenEnum.GameOver;
             }
-            
         }
-
+        
         private static void AddScore(Enemy enemy)
         {
             _score += enemy.Score;
@@ -578,6 +561,8 @@ namespace MyApp
         {
             if (_score > _highScore)
             {
+                var highScore = new UserHighScore { PlayerHighScore = _score};
+                SaveHighScoreJson(highScore);
                 _highScore = _score;
             }
         }
@@ -588,28 +573,109 @@ namespace MyApp
             {
                 if (enemy.IsAlive) return true;
             }
-
             foreach (var enemy in _enemies2)
             {
                 if (enemy.IsAlive) return true;
             }
-
             foreach (var enemy in _enemies3)
             {
                 if (enemy.IsAlive) return true;
             }
-            
             return false;
         }
 
         private static void GameOver()
         {
-            Raylib.DrawText("Game Over", ScreenWidth/2, ScreenHeight/2, TitleFontSize, Color.White);
+            Raylib.DrawText("Space", 60, 60, TitleFontSize, Color.White);
+            Raylib.DrawText("Invader", 260, 180, TitleFontSize, Color.White);
+            Raylib.DrawText("GAME OVER", 395, 350, SubtitleFontSize, Color.Maroon);
+            
+            float deltaTime = Raylib.GetFrameTime();
+            _timer += deltaTime;
+            bool showText = _timer % 1.1 < 0.7;
+            
+            if (showText)
+            {
+                Raylib.DrawText("Press click to return", 350, 430, CommonFontSize, Color.Beige);
+            }
+            
+            if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+            {
+                _currentScreen = GameScreenEnum.MainMenu;
+            }
+            
+            Raylib.DrawText("Score: ", 60, 545, CommonFontSize, Color.White);
+            Raylib.DrawText(_score.ToString("F0"), 220, 545, CommonFontSize, Color.White);
+            
+            Raylib.DrawText("High Score: ", 60, 600, CommonFontSize, Color.White);
+            Raylib.DrawText(_highScore.ToString("F0"), 310, 600, CommonFontSize, Color.White);
         }
         
         private static void MainMenu()
         {
-            Raylib.DrawText("Main Menu", ScreenWidth/2, ScreenHeight/2, TitleFontSize, Color.White);
+            float deltaTime = Raylib.GetFrameTime();
+
+            Raylib.DrawText("Space", 60, 60, TitleFontSize, Color.White);
+            Raylib.DrawText("Invader", 260, 180, TitleFontSize, Color.White);
+            
+            Raylib.DrawText("High Score: ", 60, 600, CommonFontSize, Color.White);
+            Raylib.DrawText(_highScore.ToString("F0"), 310, 600, CommonFontSize, Color.White);
+            
+            _timer += deltaTime;
+            bool showText = _timer % 1.1 < 0.7;
+            
+            if (showText)
+            {
+                Raylib.DrawText("Press click to play", 350, 400, SubtitleFontSize, Color.Beige);
+            }
+            
+            if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+            {
+                _currentScreen = GameScreenEnum.Gameplay;
+            }
+        }
+        
+        public static UserHighScore GetHighScoreJson()
+        {
+            string path = Path.Combine(Environment.CurrentDirectory, JsonPath);
+            if (!File.Exists(path))
+            {
+                return new UserHighScore { PlayerHighScore = 0 };
+            }
+            
+            using (StreamReader sr = new StreamReader(path))
+            {
+                string json = sr.ReadToEnd();
+                return JsonSerializer.Deserialize<UserHighScore>(json) ?? new UserHighScore { PlayerHighScore = 0 };
+            }
+        }
+        
+        public static void SaveHighScoreJson(UserHighScore highScore)
+        {
+            string path = Path.Combine(Environment.CurrentDirectory, JsonPath);
+            string json = JsonSerializer.Serialize(highScore);
+
+            using (StreamWriter sw = new StreamWriter(path, false))
+            {
+                sw.Write(json);
+            }
+        }
+        
+        public class UserHighScore
+        {
+            public int PlayerHighScore { get; set; }
+        }
+        
+        private static void InitializeGame()
+        {
+            _playerLives = 3;
+            _score = 0;
+            
+            InitializeEnemy(_enemies1, _enemyOnePosition, _enemyOneTexture);
+            InitializeEnemy(_enemies2, _enemyTwoPosition, _enemyTwoTexture);
+            InitializeEnemy(_enemies3, _enemyThreePosition, _enemyThreeTexture);
+            
+            _playerPosition = _playerInitialPosition;
         }
     }
 }
