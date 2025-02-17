@@ -25,7 +25,6 @@ namespace MyApp
         private static readonly string EnemyTwoImagePath = Path.Combine(Environment.CurrentDirectory, @"resources/EnemyTwo.png");
         private static readonly string EnemyThreeImagePath = Path.Combine(Environment.CurrentDirectory, @"resources/EnemyThree.png");
         private static readonly string BulletImagePath = Path.Combine(Environment.CurrentDirectory, @"resources/Bullet.png");
-        private static readonly string BoomImagePath = Path.Combine(Environment.CurrentDirectory, @"resources/Boom.png");
         private static Texture2D _playerTexture;
         private static Texture2D _enemyOneTexture;
         private static Texture2D _enemyTwoTexture;
@@ -34,7 +33,7 @@ namespace MyApp
 
         // Common Settings
         //--------------------------------------------------------------------------------------
-        private static bool _isGameOver = false;
+        private static bool _isGameplayRunning = false;
 
         // Player Settings
         //--------------------------------------------------------------------------------------
@@ -42,7 +41,8 @@ namespace MyApp
         private static Vector2 _playerPosition = _playerInitialPosition;
         private static Vector2 _playerMaxPosition = new Vector2(200, 1100);
         private static float _playerSpeed = 6 * FrameRateFix;
-        private static Rectangle _playerCollisionRectangle; 
+        private static Rectangle _playerCollisionRectangle;
+        private static int _playerLives = 3;
 
         // Player Bullet Settings
         //--------------------------------------------------------------------------------------
@@ -55,6 +55,9 @@ namespace MyApp
 
         // Enemy Settings
         //--------------------------------------------------------------------------------------
+        //private static List<Enemy> allAliveEnemies = new List<Enemy>();
+        private static bool _isGameOver = false;
+
         private static Vector2 _enemiesMaxPosition = new Vector2(140, 950);
         private static bool _isGoingToRight = true;
         private static float _enemiesSpeed = 35 * FrameRateFix;
@@ -68,17 +71,24 @@ namespace MyApp
         private static float _enemyBulletSpeed = 4 * FrameRateFix;
         private static bool _isEnemyBulletActive = false;
         private static float _enemyShootTimer = 0f;
-        private static float _enemyShootInterval = 0.5f;
-        private static float _enemyShootProbability = 0.3f;
+        private static float _enemyShootInterval = 2f;
+        private static float _enemyShootProbability = 1f;
         private static Rectangle _enemyBulletCollisionRectangle;
 
+        // Gameplay settings
+        //--------------------------------------------------------------------------------------
+        private static int _score = 0;
+        private static int _highScore = 0;
+        public static Vector2 enemyDebug;
 
+        
         private struct Enemy
         {
             public bool IsAlive;
             public Texture2D Texture;
             public Vector2 Position;
             public Rectangle CollisionRectangle;
+            public int Score;
         }
 
 
@@ -100,22 +110,36 @@ namespace MyApp
         private static Random _random = new Random();
 
 
+        public enum GameScreenEnum
+        {
+            MainMenu,
+            Gameplay,
+            GameOver
+        }
+        
+        private static GameScreenEnum _currentScreen = GameScreenEnum.Gameplay; //todo cambiar a main menu cuando este
+
+
         public static void Main()
         {
             Raylib.InitWindow(ScreenWidth, ScreenHeight, "Space Invader - Final Exam");
             Raylib.SetTargetFPS(FPS);
 
             LoadTextures();
-            InitializeEnemyPositions(_enemies1, _enemyOnePosition, _enemyOneTexture);
-            InitializeEnemyPositions(_enemies2, _enemyTwoPosition, _enemyTwoTexture);
-            InitializeEnemyPositions(_enemies3, _enemyThreePosition, _enemyThreeTexture);
+            InitializeEnemy(_enemies1, _enemyOnePosition, _enemyOneTexture);
+            InitializeEnemy(_enemies2, _enemyTwoPosition, _enemyTwoTexture);
+            InitializeEnemy(_enemies3, _enemyThreePosition, _enemyThreeTexture);
+
+            // AddAliveEnemiesToList(allAliveEnemies, _enemies1);
+            // AddAliveEnemiesToList(allAliveEnemies, _enemies2);
+            // AddAliveEnemiesToList(allAliveEnemies, _enemies3);
 
             // Main game loop
             while (!Raylib.WindowShouldClose())
             {
                 // Update
                 //----------------------------------------------------------------------------------
-                if (!_isGameOver)
+                if (_currentScreen == GameScreenEnum.Gameplay)
                 {
                     //Enemies
                     MoveAllEnemies();
@@ -168,15 +192,32 @@ namespace MyApp
             Raylib.BeginDrawing();
             Raylib.ClearBackground(Color.Blue);
 
-            //Hacer un enum con las diferentes escenas o pantallas y luego hacer un switch para dibujar la pantalla que queres ver
-            Gameplay();
-
-
-            // UI
-            //--------------------------------------------------------------------------------------
-            Ui();
-
-            Debug();
+            switch (_currentScreen)
+            {
+                case GameScreenEnum.MainMenu:
+                {
+                    //MainMenu();
+                }
+                    break;
+                case GameScreenEnum.Gameplay:
+                {
+                    Gameplay();
+                    Ui();
+                }
+                    break;
+                case GameScreenEnum.GameOver:
+                {
+                    // GameOver();
+                }
+                    break;
+                default:
+                {
+                    Console.WriteLine("Error: No en seleccionar una escena ~ Draw()");
+                }
+                    break;
+                
+            }
+            
 
             Raylib.EndDrawing();
         }
@@ -188,6 +229,8 @@ namespace MyApp
 
         private static void Gameplay()
         {
+            Debug();
+            
             //Player -------------------
             Raylib.DrawTexture(_playerTexture, (int)_playerPosition.X, (int)_playerPosition.Y, Color.White);
             DrawPlayerBullet();
@@ -199,8 +242,6 @@ namespace MyApp
             DrawEnemyPositions(_enemies2);
             DrawEnemyPositions(_enemies3);
             
-           
-
         }
 
         private static void PlayerMovement()
@@ -282,23 +323,25 @@ namespace MyApp
             {
                 if (!enemies[i].IsAlive) continue;
 
-                Raylib.DrawTexture(enemies[i].Texture, (int)enemies[i].Position.X + _spacing, (int)enemies[i].Position.Y, Color.White);
+                Raylib.DrawTexture(enemies[i].Texture, (int)enemies[i].Position.X, (int)enemies[i].Position.Y, Color.White);
             }
         }
 
-        private static void InitializeEnemyPositions(Enemy[] enemies, Vector2 initialEnemyPosition, Texture2D enemyTexture)
+        private static void InitializeEnemy(Enemy[] enemies, Vector2 initialEnemyPosition, Texture2D enemyTexture)
         {
             for (int i = 0; i < enemies.Length; i++)
             {
+                enemies[i].Score = 1;
                 enemies[i].Texture = enemyTexture;
                 enemies[i].IsAlive = true;
-                enemies[i].Position = new Vector2(initialEnemyPosition.X + i * _spacing, initialEnemyPosition.Y);
+                enemies[i].Position = new Vector2(initialEnemyPosition.X + i * _spacing, initialEnemyPosition.Y); 
+                //enemies[i].Position = initialEnemyPosition + new Vector2(i * _spacing, 0);
                 UpdateEnemyCollisionRectangle(ref enemies[i]);
             }
         }
         private static void UpdateEnemyCollisionRectangle(ref Enemy enemy) 
         {
-            enemy.CollisionRectangle = new Rectangle(enemy.Position.X + _spacing, enemy.Position.Y, enemy.Texture.Width, enemy.Texture.Height);
+            enemy.CollisionRectangle = new Rectangle(enemy.Position.X, enemy.Position.Y, enemy.Texture.Width, enemy.Texture.Height);
         }
         private static void UpdatePlayerCollisionRectangle()
         {
@@ -369,7 +412,7 @@ namespace MyApp
         private static void Debug()
         {
             Raylib.DrawRectangleLines((int)_playerCollisionRectangle.X, (int)_playerCollisionRectangle.Y, (int)_playerCollisionRectangle.Width, (int)_playerCollisionRectangle.Height, Color.Red);
-
+            
 
             for (int i = 0; i < _enemies1.Length; i++)
             {
@@ -406,7 +449,7 @@ namespace MyApp
             if (_enemyShootTimer >= _enemyShootInterval)
             {
                 _enemyShootTimer = 0f;
-                if (_random.NextSingle() < _enemyShootProbability)
+                if (_random.NextSingle() <= _enemyShootProbability)
                 {
                     ShootRandomEnemy();
                 }
@@ -419,20 +462,22 @@ namespace MyApp
             AddAliveEnemiesToList(allAliveEnemies, _enemies1);
             AddAliveEnemiesToList(allAliveEnemies, _enemies2);
             AddAliveEnemiesToList(allAliveEnemies, _enemies3);
-
-            if (allAliveEnemies.Count > 0)
-            {
-                int randomIndex = _random.Next(allAliveEnemies.Count);
-                Enemy shootingEnemy = allAliveEnemies[randomIndex];
-
-                _enemyBulletPosition = shootingEnemy.Position;
-                _enemyBulletPosition.X += shootingEnemy.Texture.Width / 2 + _spacing;
-                _enemyBulletPosition.Y += shootingEnemy.Texture.Height; 
-                _isEnemyBulletActive = true;
-            }
+            
+            if (allAliveEnemies.Count == 0) return;
+            
+            int randomNext = _random.Next(allAliveEnemies.Count);
+            Enemy enemy = allAliveEnemies[randomNext];
+            
+            
+            
+             _enemyBulletPosition = enemy.Position;
+             _enemyBulletPosition.X += enemy.Texture.Width / 2;
+             _enemyBulletPosition.Y += enemy.Texture.Height / 2; 
+            _isEnemyBulletActive = true;
         }
+        
 
-        private static void AddAliveEnemiesToList(List<Enemy> list, Enemy[] enemies)
+        private static void AddAliveEnemiesToList(List<Enemy> list,Enemy[] enemies)
         {
             foreach (var enemy in enemies)
             {
@@ -442,7 +487,7 @@ namespace MyApp
                 }
             }
         }
-
+        
 
         private static void EnemyBulletHandler()
         {
@@ -472,9 +517,8 @@ namespace MyApp
             
             if (Raylib.CheckCollisionRecs(_enemyBulletCollisionRectangle, _playerCollisionRectangle))
             {
-                Raylib.DrawText("Player Hit!", 20, 20, 50, Color.White);
                 _isEnemyBulletActive = false;
-                _isGameOver = true; //todo cambiar a vidas
+                _isGameplayRunning = true; //todo cambiar a vidas
 
             }
         }
@@ -492,10 +536,65 @@ namespace MyApp
                     {
                         enemies[i].IsAlive = false; 
                         _isPlayerBulletActive = false; 
+                        // KillEnemy(enemies[i]);
+                        AddScore(enemies[i]);
                         return;
                     }
                 }
             }
+        }
+
+        private static void CheckGameCondition()
+        {
+            if (!AreEnemiesAlive())
+            {
+                _isGameOver = true;
+                _currentScreen = GameScreenEnum.MainMenu;
+            }
+            if (_playerLives <= 0)
+            {
+                _isGameOver = true;
+                _currentScreen = GameScreenEnum.GameOver;
+            }
+            
+        }
+
+        private static void AddScore(Enemy enemy)
+        {
+            _score += enemy.Score;
+        }
+
+        private static void SaveHighScore()
+        {
+            if (_score > _highScore)
+            {
+                _highScore = _score;
+            }
+        }
+        
+        // private static void KillEnemy(Enemy enemy)
+        // {
+        //     allAliveEnemies.Remove(enemy);
+        // }
+
+        private static bool AreEnemiesAlive()
+        {
+            foreach (var enemy in _enemies1)
+            {
+                if (enemy.IsAlive) return true;
+            }
+
+            foreach (var enemy in _enemies2)
+            {
+                if (enemy.IsAlive) return true;
+            }
+
+            foreach (var enemy in _enemies3)
+            {
+                if (enemy.IsAlive) return true;
+            }
+            
+            return false;
         }
     }
 }
