@@ -32,10 +32,7 @@ namespace MyApp
         private static Texture2D _enemyTwoTexture;
         private static Texture2D _enemyThreeTexture;
         private static Texture2D _bulletTexture;
-
-        // Common Settings
-        private static bool _isGameplayRunning = false;
-
+        
         // Player Settings
         private static Vector2 _playerInitialPosition = new Vector2(550, 610);
         private static Vector2 _playerPosition = _playerInitialPosition;
@@ -50,11 +47,8 @@ namespace MyApp
         private static float _bulletSpeed = 6 * FrameRateFix;
         private static bool _isPlayerBulletActive = false;
         private static Rectangle _playerBulletCollisionRectangle;
-
-
+        
         // Enemy Settings
-        private static bool _isGameOver = false;
-
         private static Vector2 _enemiesMaxPosition = new Vector2(140, 950);
         private static bool _isGoingToRight = true;
         private static float _enemiesSpeed = 35 * FrameRateFix;
@@ -76,8 +70,6 @@ namespace MyApp
         private static int _highScore ;
         public static Vector2 enemyDebug;
         public static bool flag = true;
-
-
         
         private struct Enemy
         {
@@ -87,7 +79,6 @@ namespace MyApp
             public Rectangle CollisionRectangle;
             public int Score;
         }
-
 
         private const float MinXPosition = 40;
         //Enemy One (abajo)
@@ -108,7 +99,6 @@ namespace MyApp
         private static Random _random = new Random();
         private static Camera2D _camera;
 
-
         private enum GameScreenEnum
         {
             MainMenu,
@@ -117,7 +107,7 @@ namespace MyApp
         }
         
         private static GameScreenEnum _currentScreen = GameScreenEnum.MainMenu;
-
+        
         public static void Main()
         {
             Raylib.InitWindow(ScreenWidth, ScreenHeight, "Space Invader - Final Exam");
@@ -125,10 +115,8 @@ namespace MyApp
             _camera = new Camera2D();
             LoadTextures();
     
-            // Load highscore
             _highScore = GetHighScoreJson().PlayerHighScore;
             
-            // Main game loop
             while (!Raylib.WindowShouldClose())
             {
                 // Update
@@ -158,7 +146,6 @@ namespace MyApp
             }
             
             Raylib.CloseWindow();
-
         }
 
         private static void LoadTextures()
@@ -465,7 +452,6 @@ namespace MyApp
             _enemyBulletPosition.Y += enemy.Texture.Height / 2; 
             _isEnemyBulletActive = true;
         }
-        
 
         private static void AddAliveEnemiesToList(List<Enemy> list,Enemy[] enemies)
         {
@@ -541,13 +527,11 @@ namespace MyApp
             if (!AreEnemiesAlive())
             {
                 SaveHighScore();
-                _isGameOver = true;
                 _currentScreen = GameScreenEnum.MainMenu;
             }
             if (_playerLives <= 0)
             {
                 SaveHighScore();
-                _isGameOver = true;
                 _currentScreen = GameScreenEnum.GameOver;
             }
         }
