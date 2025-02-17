@@ -12,8 +12,8 @@ namespace MyApp
         //--------------------------------------------------------------------------------------
         private const int ScreenWidth = 1280;
         private const int ScreenHeight = 720;
-        private const int TittleFontSize = 120;
-        private const int SubtittleFontSize = 80;
+        private const int TitleFontSize = 120;
+        private const int SubtitleFontSize = 80;
         private const int CommonFontSize = 40;
         private const int FPS = 60;
         private const int FrameRateFix = 100;
@@ -55,7 +55,6 @@ namespace MyApp
 
         // Enemy Settings
         //--------------------------------------------------------------------------------------
-        //private static List<Enemy> allAliveEnemies = new List<Enemy>();
         private static bool _isGameOver = false;
 
         private static Vector2 _enemiesMaxPosition = new Vector2(140, 950);
@@ -117,7 +116,7 @@ namespace MyApp
             GameOver
         }
         
-        private static GameScreenEnum _currentScreen = GameScreenEnum.Gameplay; //todo cambiar a main menu cuando este
+        private static GameScreenEnum _currentScreen = GameScreenEnum.Gameplay; //todo cambiar a main menu cuando este hecho
 
 
         public static void Main()
@@ -129,11 +128,7 @@ namespace MyApp
             InitializeEnemy(_enemies1, _enemyOnePosition, _enemyOneTexture);
             InitializeEnemy(_enemies2, _enemyTwoPosition, _enemyTwoTexture);
             InitializeEnemy(_enemies3, _enemyThreePosition, _enemyThreeTexture);
-
-            // AddAliveEnemiesToList(allAliveEnemies, _enemies1);
-            // AddAliveEnemiesToList(allAliveEnemies, _enemies2);
-            // AddAliveEnemiesToList(allAliveEnemies, _enemies3);
-
+            
             // Main game loop
             while (!Raylib.WindowShouldClose())
             {
@@ -152,12 +147,12 @@ namespace MyApp
                     PlayerBulletHandler();
                     
                     //Collisions
-                    UpdatePlayerCollisionRectangle(); // Update player collision rectangle
-                    UpdatePlayerBulletCollisionRectangle(); // Update player bullet collision rectangle
-                    UpdateEnemyBulletCollisionRectangle(); // Update enemy bullet collision rectangle
-                    HandleCollisions(_enemies1); // Handle player bullet collision with enemies
-                    HandleCollisions(_enemies2); // Handle player bullet collision with enemies
-                    HandleCollisions(_enemies3); // Handle player bullet collision with enemies
+                    UpdatePlayerCollisionRectangle();
+                    UpdatePlayerBulletCollisionRectangle();
+                    UpdateEnemyBulletCollisionRectangle();
+                    HandleCollisions(_enemies1);
+                    HandleCollisions(_enemies2);
+                    HandleCollisions(_enemies3);
                     CheckEnemyBulletCollisionWithPlayer();
                 }
                 
@@ -240,7 +235,7 @@ namespace MyApp
 
         private static void Gameplay()
         {
-            Debug();
+            // GameplayDebug();
             
             //Player -------------------
             Raylib.DrawTexture(_playerTexture, (int)_playerPosition.X, (int)_playerPosition.Y, Color.White);
@@ -323,9 +318,7 @@ namespace MyApp
                     enemies[i].Position.X -= _enemiesSpeed * deltaTime;
                     UpdateEnemyCollisionRectangle(ref enemies[i]);
                 }
-
             }
-
         }
 
         private static void DrawEnemyPositions(Enemy[] enemies)
@@ -346,7 +339,6 @@ namespace MyApp
                 enemies[i].Texture = enemyTexture;
                 enemies[i].IsAlive = true;
                 enemies[i].Position = new Vector2(initialEnemyPosition.X + i * _spacing, initialEnemyPosition.Y); 
-                //enemies[i].Position = initialEnemyPosition + new Vector2(i * _spacing, 0);
                 UpdateEnemyCollisionRectangle(ref enemies[i]);
             }
         }
@@ -420,7 +412,7 @@ namespace MyApp
             }
         }
 
-        private static void Debug()
+        private static void GameplayDebug()
         {
             Raylib.DrawRectangleLines((int)_playerCollisionRectangle.X, (int)_playerCollisionRectangle.Y, (int)_playerCollisionRectangle.Width, (int)_playerCollisionRectangle.Height, Color.Red);
             
@@ -612,12 +604,12 @@ namespace MyApp
 
         private static void GameOver()
         {
-            Raylib.DrawText("Game Over", ScreenWidth/2, ScreenHeight/2, TittleFontSize, Color.White);
+            Raylib.DrawText("Game Over", ScreenWidth/2, ScreenHeight/2, TitleFontSize, Color.White);
         }
         
         private static void MainMenu()
         {
-            Raylib.DrawText("Main Menu", ScreenWidth/2, ScreenHeight/2, TittleFontSize, Color.White);
+            Raylib.DrawText("Main Menu", ScreenWidth/2, ScreenHeight/2, TitleFontSize, Color.White);
         }
     }
 }
