@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Taller Space Invader")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dc8eb3abb52bbee5e655e7707caad7a98f7d8959")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+11529f11e43ef8565dd15ea2a8426d3cfd1876d7")]
 [assembly: System.Reflection.AssemblyProductAttribute("Taller Space Invader")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Taller Space Invader")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

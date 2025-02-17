@@ -12,9 +12,9 @@ namespace MyApp
         //--------------------------------------------------------------------------------------
         private const int ScreenWidth = 1280;
         private const int ScreenHeight = 720;
-        private const int TittleFontSize = 130;
+        private const int TittleFontSize = 120;
         private const int SubtittleFontSize = 80;
-        private const int CommonFontSize = 50;
+        private const int CommonFontSize = 40;
         private const int FPS = 60;
         private const int FrameRateFix = 100;
 
@@ -78,7 +78,7 @@ namespace MyApp
         // Gameplay settings
         //--------------------------------------------------------------------------------------
         private static int _score = 0;
-        private static int _highScore = 0;
+        private static int _highScore ;
         public static Vector2 enemyDebug;
 
         
@@ -196,7 +196,7 @@ namespace MyApp
             {
                 case GameScreenEnum.MainMenu:
                 {
-                    //MainMenu();
+                    MainMenu();
                 }
                     break;
                 case GameScreenEnum.Gameplay:
@@ -207,7 +207,7 @@ namespace MyApp
                     break;
                 case GameScreenEnum.GameOver:
                 {
-                    // GameOver();
+                    GameOver();
                 }
                     break;
                 default:
@@ -224,7 +224,18 @@ namespace MyApp
 
         private static void Ui()
         {
-            // Raylib.DrawText("Congrats! You created your first window!", 190, 200, 20, Color.White);
+            int livesYPadding = 20;
+            int scoreYPadding = 60;
+            int highscoreYPadding = 100;
+            
+            Raylib.DrawText("Lives: ", 30, livesYPadding, CommonFontSize, Color.White);
+            Raylib.DrawText(_playerLives.ToString("F0"), 300, livesYPadding, CommonFontSize, Color.White);
+            
+            Raylib.DrawText("Score: ", 30, scoreYPadding, CommonFontSize, Color.White);
+            Raylib.DrawText(_score.ToString("F0"), 300, scoreYPadding, CommonFontSize, Color.White);
+            
+            Raylib.DrawText("Highscore: ", 30, highscoreYPadding, CommonFontSize, Color.White);
+            Raylib.DrawText(_highScore.ToString("F0"), 300, highscoreYPadding, CommonFontSize, Color.White);
         }
 
         private static void Gameplay()
@@ -518,9 +529,14 @@ namespace MyApp
             if (Raylib.CheckCollisionRecs(_enemyBulletCollisionRectangle, _playerCollisionRectangle))
             {
                 _isEnemyBulletActive = false;
-                _isGameplayRunning = true; //todo cambiar a vidas
-
+                PlayerHit();
+                CheckGameCondition();
             }
+        }
+
+        private static void PlayerHit()
+        {
+            _playerLives--;
         }
 
         private static void HandleCollisions(Enemy[] enemies)
@@ -536,8 +552,8 @@ namespace MyApp
                     {
                         enemies[i].IsAlive = false; 
                         _isPlayerBulletActive = false; 
-                        // KillEnemy(enemies[i]);
                         AddScore(enemies[i]);
+                        CheckGameCondition();
                         return;
                     }
                 }
@@ -548,11 +564,13 @@ namespace MyApp
         {
             if (!AreEnemiesAlive())
             {
+                SaveHighScore();
                 _isGameOver = true;
                 _currentScreen = GameScreenEnum.MainMenu;
             }
             if (_playerLives <= 0)
             {
+                SaveHighScore();
                 _isGameOver = true;
                 _currentScreen = GameScreenEnum.GameOver;
             }
@@ -572,11 +590,6 @@ namespace MyApp
             }
         }
         
-        // private static void KillEnemy(Enemy enemy)
-        // {
-        //     allAliveEnemies.Remove(enemy);
-        // }
-
         private static bool AreEnemiesAlive()
         {
             foreach (var enemy in _enemies1)
@@ -595,6 +608,16 @@ namespace MyApp
             }
             
             return false;
+        }
+
+        private static void GameOver()
+        {
+            Raylib.DrawText("Game Over", ScreenWidth/2, ScreenHeight/2, TittleFontSize, Color.White);
+        }
+        
+        private static void MainMenu()
+        {
+            Raylib.DrawText("Main Menu", ScreenWidth/2, ScreenHeight/2, TittleFontSize, Color.White);
         }
     }
 }
